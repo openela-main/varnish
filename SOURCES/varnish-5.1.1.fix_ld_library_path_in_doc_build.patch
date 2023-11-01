@@ -1,0 +1,52 @@
+diff --git a/doc/sphinx/Makefile.in b/doc/sphinx/Makefile.in
+index 0819064..11e4ba2 100644
+--- a/doc/sphinx/Makefile.in
++++ b/doc/sphinx/Makefile.in
+@@ -659,37 +659,47 @@ include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
+ # XXX add varnishstat here when it's been _opt2rst'ed
+ 
+ include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishncsa/varnishncsa --options > ${@}_
+ 	mv ${@}_ ${@}
+ include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishncsa/varnishncsa --synopsis > ${@}_
+ 	mv ${@}_ ${@}
+ 
+ include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishlog/varnishlog --options > ${@}_
+ 	mv ${@}_ ${@}
+ include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishlog/varnishlog --synopsis > ${@}_
+ 	mv ${@}_ ${@}
+ 
+ include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishtop/varnishtop --options > ${@}_
+ 	mv ${@}_ ${@}
+ include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishtop/varnishtop --synopsis > ${@}_
+ 	mv ${@}_ ${@}
+ 
+ include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishhist/varnishhist --options > ${@}_
+ 	mv ${@}_ ${@}
+ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishhist/varnishhist --synopsis > ${@}_
+ 	mv ${@}_ ${@}
+ 
+ include/varnishstat_options.rst: $(top_builddir)/bin/varnishstat/varnishstat
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishstat/varnishstat --options > ${@}_
+ 	mv ${@}_ ${@}
+ include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
++	LD_LIBRARY_PATH=$(top_builddir)/lib/libvarnishapi/.libs \
+ 	$(top_builddir)/bin/varnishstat/varnishstat --synopsis > ${@}_
+ 	mv ${@}_ ${@}
+ 
