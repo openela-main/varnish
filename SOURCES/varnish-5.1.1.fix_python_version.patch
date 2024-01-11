@@ -1,0 +1,62 @@
+--- configure.orig	2017-03-18 02:53:31.235204299 +0100
++++ configure	2017-03-18 02:54:54.229053852 +0100
+@@ -13545,13 +13545,13 @@
+ 
+         if test -n "$PYTHON"; then
+       # If the user set $PYTHON, use it and don't search something else.
+-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $PYTHON version is >= 2.7" >&5
+-$as_echo_n "checking whether $PYTHON version is >= 2.7... " >&6; }
++      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $PYTHON version is >= 2.4" >&5
++$as_echo_n "checking whether $PYTHON version is >= 2.4... " >&6; }
+       prog="import sys
+ # split strings by '.' and convert to numeric.  Append some zeros
+ # because we need at least 4 digits for the hex conversion.
+ # map returns an iterator in Python 3.0 and a list in 2.x
+-minver = list(map(int, '2.7'.split('.'))) + [0, 0, 0]
++minver = list(map(int, '2.4'.split('.'))) + [0, 0, 0]
+ minverhex = 0
+ # xrange is not present in Python 3.0 and range returns an iterator
+ for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
+@@ -13572,8 +13572,8 @@
+     else
+       # Otherwise, try each interpreter until we find one that satisfies
+       # VERSION.
+-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a Python interpreter with version >= 2.7" >&5
+-$as_echo_n "checking for a Python interpreter with version >= 2.7... " >&6; }
++      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a Python interpreter with version >= 2.4" >&5
++$as_echo_n "checking for a Python interpreter with version >= 2.4... " >&6; }
+ if ${am_cv_pathless_PYTHON+:} false; then :
+   $as_echo_n "(cached) " >&6
+ else
+@@ -13584,7 +13584,7 @@
+ # split strings by '.' and convert to numeric.  Append some zeros
+ # because we need at least 4 digits for the hex conversion.
+ # map returns an iterator in Python 3.0 and a list in 2.x
+-minver = list(map(int, '2.7'.split('.'))) + [0, 0, 0]
++minver = list(map(int, '2.4'.split('.'))) + [0, 0, 0]
+ minverhex = 0
+ # xrange is not present in Python 3.0 and range returns an iterator
+ for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
+@@ -13651,7 +13651,7 @@
+ 
+   if test "$PYTHON" = :; then
+ 
+-		as_fn_error $? "Python >= 2.7 is required." "$LINENO" 5
++		as_fn_error $? "Python >= 2.4 is required." "$LINENO" 5
+ 
+   else
+ 
+@@ -13698,11 +13698,11 @@
+     can_use_sysconfig = 0
+ else:
+     can_use_sysconfig = 1
+-# Can't use sysconfig in CPython 2.7, since it's broken in virtualenvs:
++# Can't use sysconfig in CPython 2.4, since it's broken in virtualenvs:
+ # <https://github.com/pypa/virtualenv/issues/118>
+ try:
+     from platform import python_implementation
+-    if python_implementation() == 'CPython' and sys.version[:3] == '2.7':
++    if python_implementation() == 'CPython' and sys.version[:3] == '2.4':
+         can_use_sysconfig = 0
+ except ImportError:
+     pass"
