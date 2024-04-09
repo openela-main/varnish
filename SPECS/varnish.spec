@@ -18,8 +18,8 @@
 
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 6.0.8
-Release: 3%{?dist}.1
+Version: 6.0.13
+Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: https://www.varnish-cache.org/
@@ -32,17 +32,8 @@ Patch9:  varnish-5.1.1.fix_python_version.patch
 # https://github.com/varnishcache/varnish-cache/commit/5220c394232c25bb7a807a35e7394059ecefa821#diff-2279587378a4426edde05f42e1acca5e
 Patch11: varnish-6.0.0.fix_el6_fortify_source.patch
 
-# https://bugzilla.redhat.com/show_bug.cgi?id=2045031
-Patch100: varnish-6.0.8.CVE-2022-23959.patch
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=2141844
-Patch101: varnish-6.0.8-CVE-2022-45060.patch
-
-# https://issues.redhat.com/browse/RHEL-12812
-Patch102: varnish-6.0.8-CVE-2023-44487-rate_limit.patch
-
-# https://issues.redhat.com/browse/RHEL-12812
-Patch103: varnish-6.0.8-CVE-2023-44487-vcl_vrt.patch
+# Security patches ...
+# Patch100: varnish-6.0.13.CVE-.....patch
 
 Obsoletes: varnish-libs
 
@@ -152,11 +143,6 @@ sed -i '8 i\RPM_BUILD_ROOT=%{buildroot}' find-provides
 %patch11 -p0
 %endif
 
-%patch100 -p1
-%patch101 -p1
-%patch102 -p1
-%patch103 -p1
-
 %build
 %if 0%{?rhel} == 6
 export CFLAGS="%{optflags} -fPIC"
@@ -221,10 +207,6 @@ rm -rf doc/html/_sources
 sed -i 's/48/128/g;' bin/varnishtest/tests/c00057.vtc
 %endif
 #make %{?_smp_mflags} check LD_LIBRARY_PATH="%{buildroot}%{_libdir}:%{buildroot}%{_libdir}/%{name}" VERBOSE=1
-
-# disable test because of CVE-2023-44487 fix
-# https://github.com/varnishcache/varnish-cache/pull/3998#issuecomment-1764649216
-rm bin/varnishtest/tests/t02014.vtc
 
 %install
 rm -rf %{buildroot}
@@ -392,16 +374,13 @@ fi
 
 
 %changelog
-* Wed Oct 18 2023 Tomas Korbar <tkorbar@redhat.com> - 6.0.8-3.1
-- Add parameters h2_rst_allowance and h2_rst_allowance_period to mitigate CVE-2023-44487
-- Resolves: RHEL-12812
+* Thu Mar 28 2024 Luboš Uhliarik <luhliari@redhat.com> - 6.0.13-1
+- new version 6.0.13
+- Resolves: RHEL-30378 - varnish:6/varnish: HTTP/2 Broken Window Attack may
+  result in denial of service (CVE-2024-30156)
 
-* Mon Nov 14 2022 Luboš Uhliarik <luhliari@redhat.com> - 6.0.8-3
-- Resolves: #2142093 - CVE-2022-45060 varnish:6/varnish: Request Forgery
-  Vulnerability
-
-* Tue Feb 01 2022 Luboš Uhliarik <luhliari@redhat.com> - 6.0.8-2
-- Resolves: #2047650 - CVE-2022-23959 varnish:6/varnish: Varnish HTTP/1 Request
+* Tue Feb 01 2022 Luboš Uhliarik <luhliari@redhat.com> - 6.0.8-1.1
+- Resolves: #2047648 - CVE-2022-23959 varnish:6/varnish: Varnish HTTP/1 Request
   Smuggling Vulnerability
 
 * Thu Jul 22 2021 Luboš Uhliarik <luhliari@redhat.com> - 6.0.8-1
