@@ -23,7 +23,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 6.6.2
-Release: 4%{?dist}.1
+Release: 6%{?dist}
 License: BSD
 URL: https://www.varnish-cache.org/
 Source0: http://varnish-cache.org/_downloads/%{name}-%{version}.tgz
@@ -67,10 +67,10 @@ Source1: https://github.com/varnishcache/pkg-varnish-cache/archive/%{commit1}.ta
 # https://bugzilla.redhat.com/show_bug.cgi?id=2141844
 Patch100: varnish-6.6.2-CVE-2022-45060.patch
 
-# https://issues.redhat.com/browse/RHEL-12817
+# https://issues.redhat.com/browse/RHEL-12818
 Patch101: varnish-6.6.2-CVE-2023-44487-rate_limit.patch
 
-# https://issues.redhat.com/browse/RHEL-12817
+# https://issues.redhat.com/browse/RHEL-12818
 Patch102: varnish-6.6.2-CVE-2023-44487-vcl_vrt.patch
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=2271486
@@ -320,13 +320,13 @@ test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc
 
 
 %changelog
-* Sat Mar 30 2024 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-4.1
-- Resolves: RHEL-30387 - varnish: HTTP/2 Broken Window Attack may result
+* Tue Apr 16 2024 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-6
+- Resolves: RHEL-30337 - varnish: HTTP/2 Broken Window Attack may result
   in denial of service (CVE-2024-30156)
 
-* Thu Oct 19 2023 Tomas Korbar <tkorbar@redhat.com> - 6.6.2-4
+* Fri Oct 20 2023 Tomas Korbar <tkorbar@redhat.com> - 6.6.2-5
 - Add parameters h2_rst_allowance and h2_rst_allowance_period to mitigate CVE-2023-44487
-- Resolves: RHEL-12817
+- Resolves: RHEL-12818
 
 * Mon Dec 05 2022 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-3
 - Resolves: #2142096 - CVE-2022-45060 varnish: Request Forgery Vulnerability
