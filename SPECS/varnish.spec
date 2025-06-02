@@ -23,7 +23,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 6.6.2
-Release: 6%{?dist}
+Release: 6%{?dist}.1
 License: BSD
 URL: https://www.varnish-cache.org/
 Source0: http://varnish-cache.org/_downloads/%{name}-%{version}.tgz
@@ -75,6 +75,9 @@ Patch102: varnish-6.6.2-CVE-2023-44487-vcl_vrt.patch
 
 # https://bugzilla.redhat.com/show_bug.cgi?id=2271486
 Patch103: varnish-6.6.2-CVE-2024-30156.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=2364235
+Patch104: varnish-6.6.2-CVE-2025-47905.patch
 
 %if 0%{?fedora} > 29
 Provides: varnish%{_isa} = %{version}-%{release}
@@ -172,6 +175,7 @@ sed -i 's,rst2man-3.6,rst2man-3.4,g; s,rst2html-3.6,rst2html-3.4,g; s,phinx-buil
 %patch101 -p1 -b .CVE-2023-44487
 %patch102 -p1 -b .CVE-2023-44487-vcl
 %patch103 -p1 -b .CVE-2024-30156
+%patch104 -p1 -b .CVE-2025-47905
 
 %build
 # https://gcc.gnu.org/wiki/FAQ#PR323
@@ -320,6 +324,9 @@ test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc
 
 
 %changelog
+* Tue May 20 2025 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-6.1
+- Resolves: RHEL-89700 - varnish: request smuggling attacks (CVE-2025-47905)
+
 * Tue Apr 16 2024 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-6
 - Resolves: RHEL-30337 - varnish: HTTP/2 Broken Window Attack may result
   in denial of service (CVE-2024-30156)
