@@ -19,7 +19,7 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 6.0.13
-Release: 1%{?dist}
+Release: 1%{?dist}.1
 License: BSD
 Group: System Environment/Daemons
 URL: https://www.varnish-cache.org/
@@ -33,7 +33,8 @@ Patch9:  varnish-5.1.1.fix_python_version.patch
 Patch11: varnish-6.0.0.fix_el6_fortify_source.patch
 
 # Security patches ...
-# Patch100: varnish-6.0.13.CVE-.....patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2364235
+Patch100: varnish-6.0.13-CVE-2025-47905.patch
 
 Obsoletes: varnish-libs
 
@@ -142,6 +143,7 @@ sed -i '8 i\RPM_BUILD_ROOT=%{buildroot}' find-provides
 %patch9 -p0
 %patch11 -p0
 %endif
+%patch100 -p1
 
 %build
 %if 0%{?rhel} == 6
@@ -207,6 +209,10 @@ rm -rf doc/html/_sources
 sed -i 's/48/128/g;' bin/varnishtest/tests/c00057.vtc
 %endif
 #make %{?_smp_mflags} check LD_LIBRARY_PATH="%{buildroot}%{_libdir}:%{buildroot}%{_libdir}/%{name}" VERBOSE=1
+
+# disable test because of CVE-2023-44487 fix
+# https://github.com/varnishcache/varnish-cache/pull/3998#issuecomment-1764649216
+rm bin/varnishtest/tests/t02014.vtc
 
 %install
 rm -rf %{buildroot}
@@ -374,10 +380,18 @@ fi
 
 
 %changelog
+* Wed May 21 2025 Luboš Uhliarik <luhliari@redhat.com> - 6.0.13-1.1
+- Resolves: RHEL-89695 - varnish: request smuggling attacks (CVE-2025-47905)
+
 * Thu Mar 28 2024 Luboš Uhliarik <luhliari@redhat.com> - 6.0.13-1
 - new version 6.0.13
-- Resolves: RHEL-30378 - varnish:6/varnish: HTTP/2 Broken Window Attack may
+- Resolves: RHEL-30379 - varnish:6/varnish: HTTP/2 Broken Window Attack may
   result in denial of service (CVE-2024-30156)
+
+* Mon Oct 23 2023 Tomas Korbar <tkorbar@redhat.com> - 6.0.8-4
+- Add parameters h2_rst_allowance and h2_rst_allowance_period to mitigate CVE-2023-44487
+- CVE-2022-45060 varnish:6/varnish: Request Forgery
+- Resolves: RHEL-12814
 
 * Tue Feb 01 2022 Luboš Uhliarik <luhliari@redhat.com> - 6.0.8-1.1
 - Resolves: #2047648 - CVE-2022-23959 varnish:6/varnish: Varnish HTTP/1 Request
