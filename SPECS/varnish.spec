@@ -23,10 +23,23 @@
 # Default: Use jemalloc, as adviced by upstream project
 # Change to 1 to use system allocator (ie. glibc)
 %if 0%{?rhel}
-%bcond_without system_allocator
+    %if 0%{?rhel} > 9
+        # for rhel >= 10, use bundled jemalloc
+        %bcond_with system_allocator
+        %bcond_without bundled_jemalloc
+    %else
+        # for rhel <= 9, use system allocator
+        %bcond_without system_allocator
+        %bcond_with bundled_jemalloc
+    %endif
 %else
-%bcond_with system_allocator
+    # use jemalloc from repo
+    %bcond_with system_allocator
+    %bcond_with bundled_jemalloc
 %endif
+
+%define jemalloc_version 5.3.0
+%define jemalloc_prefix varnish_
 
 %if %{with system_allocator}
 # use _lto_cflags if present
@@ -37,13 +50,20 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 7.6.1
-Release: 2%{?dist}.1
+Release: 4%{?dist}
 License: BSD-2-Clause AND (BSD-2-Clause-FreeBSD AND BSD-3-Clause AND LicenseRef-Fedora-Public-Domain AND Zlib)
 URL: https://www.varnish-cache.org/
 Source0: http://varnish-cache.org/_downloads/%{name}-%{version}.tgz
 Source1: https://github.com/varnishcache/pkg-varnish-cache/archive/%{commit1}.tar.gz#/pkg-varnish-cache-%{shortcommit1}.tar.gz
+Source2: https://github.com/jemalloc/jemalloc/releases/download/%{jemalloc_version}/jemalloc-%{jemalloc_version}.tar.bz2
 
 # Patches:
+%if %{with bundled_jemalloc}
+# bundled jemalloc patch
+Patch1: jemalloc-5.3.0_fno-builtin.patch
+Patch2: jemalloc-5.3.0-aarch64-ts-segfault.patch
+%endif
+
 # https://bugzilla.redhat.com/show_bug.cgi?id=2364235
 Patch100: varnish-7.6.1-CVE-2025-47905.patch
 
@@ -64,6 +84,10 @@ Provides: vmod(unix)%{_isa} = %{version}-%{release}
 Provides: vmod(vtc)%{_isa} = %{version}-%{release}
 %endif
 
+%if %{with bundled_jemalloc}
+Provides: bundled(jemalloc)
+%endif
+
 
 %if 0%{?rhel} == 7
 BuildRequires: python34 python34-sphinx python34-docutils
@@ -74,8 +98,10 @@ BuildRequires: gcc
 %if %{with system_allocator}
 # use glibc
 %else
+%if %{without bundled_jemalloc}
 %ifnarch aarch64
 BuildRequires: jemalloc-devel
+%endif
 %endif
 %endif
 
@@ -85,6 +111,11 @@ BuildRequires: ncurses-devel
 BuildRequires: pcre2-devel
 BuildRequires: pkgconfig
 BuildRequires: systemd-units
+
+%if %{with bundled_jemalloc}
+BuildRequires:  /usr/bin/xsltproc
+BuildRequires:  perl-generators
+%endif
 
 # Extra requirements for the build suite
 #   needs haproxy2
@@ -109,7 +140,9 @@ Requires(postun): systemd-units
 %if %{with system_allocator}
 # use glibc
 %else
+%if %{without bundled_jemalloc}
 Requires: jemalloc
+%endif
 %endif
 
 %description
@@ -152,7 +185,55 @@ sed -i 's,rst2man-3.6,rst2man-3.4,g; s,rst2html-3.6,rst2html-3.4,g; s,phinx-buil
 
 %patch 100 -p1 -b .CVE-2022-45060
 
+# jemalloc
+%if %{with bundled_jemalloc}
+tar xjf %SOURCE2
+sed -i '/^LIBPREFIX/s/@libprefix@/@libprefix@%{jemalloc_prefix}/' jemalloc*/Makefile.in
+pushd jemalloc*
+%patch 1 -p1 -b .jemalloc
+%patch 2 -p1 -b .ts-segfault
+popd
+
+# Override PAGESIZE, bz #1545539
+%ifarch %ix86 %arm x86_64 s390x riscv64
+%define lg_page --with-lg-page=12
+%endif
+
+%ifarch ppc64 ppc64le aarch64
+%define lg_page --with-lg-page=16
+%endif
+
+# Disable thp on systems not supporting this for now
+%ifarch %ix86 %arm aarch64 s390x
+%define disable_thp --disable-thp
+%endif
+%endif
+
 %build
+
+%if %{with bundled_jemalloc}
+# build bundled jemalloc first
+pushd jemalloc*
+
+echo "For debugging package builders"
+echo "What is the pagesize?"
+getconf PAGESIZE
+
+echo "What mm features are available?"
+ls /sys/kernel/mm
+ls /sys/kernel/mm/transparent_hugepage || true
+cat /sys/kernel/mm/transparent_hugepage/enabled || true
+
+echo "What kernel version and config is this?"
+uname -a
+
+%configure %{?disable_thp} %{?lg_page} --enable-prof
+make %{?_smp_mflags}
+popd
+%endif
+
+
+# varnish
 %if %{with system_allocator}
 export CFLAGS="%{optflags}"
 %else
@@ -186,6 +267,14 @@ export RST2MAN=/bin/true
 # Explicit python, please
 export PYTHON=%{__python}
 
+for f in configure configure.ac; do
+  sed -i 's|ljemalloc|l%{jemalloc_prefix}jemalloc|g' $f
+done
+
+%if %{with bundled_jemalloc}
+export LDFLAGS="$LDFLAGS -L%{_builddir}/%{name}-%{version}/jemalloc-%{jemalloc_version}/lib"
+%endif
+
 %configure LT_SYS_LIBRARY_PATH=%_libdir \
  --disable-static \
   --localstatedir=/var/lib  \
@@ -196,10 +285,13 @@ export PYTHON=%{__python}
   --enable-pcre2-jit=no \
 %endif
 %endif
-%if %{with system_allocator}
+%if %{with system_allocator} || %{without bundled_jemalloc}
   --with-jemalloc=no \
 %endif
 
+%if %{with bundled_jemalloc}
+export LD_LIBRARY_PATH=%{_builddir}/%{name}-%{version}/jemalloc-%{jemalloc_version}/lib
+%endif
 %make_build
 
 # One varnish user is enough
@@ -209,10 +301,25 @@ sed -i 's,User=varnishlog,User=varnish,g;' redhat/varnishncsa.service
 rm -rf doc/html/_sources
 
 %check
+# check jemalloc first
+%if %{with bundled_jemalloc}
+pushd jemalloc*
+make %{?_smp_mflags} check
+popd
+%endif
 
 # Up the stack size in tests, necessary on secondary arches
 sed -i 's/thread_pool_stack 80k/thread_pool_stack 128k/g;' bin/varnishtest/tests/*.vtc
 sed -i 's/file,2M/file,8M/' bin/varnishtest/tests/r04036.vtc
+
+%if %{with bundled_jemalloc}
+export LD_LIBRARY_PATH=%{_builddir}/%{name}-%{version}/jemalloc-%{jemalloc_version}/lib
+%endif
+
+# issue on aarch64 - mlock() of VSM failed: Cannot allocate memory (12)
+%ifarch aarch64
+rm bin/varnishtest/tests/b00039.vtc
+%endif
 
 # Just a hack to avoid too high load on secondary arch builders
 %ifarch s390x ppc64le
@@ -220,11 +327,23 @@ sed -i 's/file,2M/file,8M/' bin/varnishtest/tests/r04036.vtc
 rm bin/varnishtest/tests/t02014.vtc
 make -j2 check
 %else
-#make_build check
+%make_build check
 %endif
 
 %install
 rm -rf %{buildroot}
+
+# jemalloc
+%if %{with bundled_jemalloc}
+pushd jemalloc*
+make DESTDIR=%{buildroot} install_lib %{?_smp_mflags}
+
+find %{buildroot}%{_libdir}/ -name '*.a' -exec rm -vf {} ';'
+
+# we don't need .pc file
+rm  %{buildroot}%{_libdir}/pkgconfig/jemalloc.pc
+popd
+%endif
 
 # mock el7 defaults to LANG=C, which makes python3 fail when parsing utf8 text
 %if 0%{?rhel} == 7
@@ -319,8 +438,12 @@ test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc
 
 
 %changelog
-* Tue May 20 2025 Luboš Uhliarik <luhliari@redhat.com> - 7.6.1-2.1
-- Resolves: RHEL-89690 - varnish: request smuggling attacks (CVE-2025-47905)
+* Wed Jun 11 2025 Luboš Uhliarik <luhliari@redhat.com> - 7.6.1-4
+- Resolves: RHEL-45756 - Varnish consumes significantly more memory
+  under RHEL8/9
+
+* Tue May 20 2025 Luboš Uhliarik <luhliari@redhat.com> - 7.6.1-3
+- Resolves: RHEL-89691 - varnish: request smuggling attacks (CVE-2025-47905)
 
 * Wed Jan 22 2025 Luboš Uhliarik <luhliari@redhat.com> - 7.6.1-2
 - Resolves: RHEL-59267 - varnish rebase to 7.6.1

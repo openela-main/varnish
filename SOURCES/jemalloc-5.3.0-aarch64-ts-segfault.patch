@@ -1,0 +1,140 @@
+diff --git a/test/unit/psset.c b/test/unit/psset.c
+index 6ff7201..58b4a88 100644
+--- a/test/unit/psset.c
++++ b/test/unit/psset.c
+@@ -124,7 +124,7 @@ TEST_BEGIN(test_fill) {
+ 	hpdata_t pageslab;
+ 	hpdata_init(&pageslab, PAGESLAB_ADDR, PAGESLAB_AGE);
+ 
+-	edata_t alloc[HUGEPAGE_PAGES];
++	edata_t *alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
+ 
+ 	psset_t psset;
+ 	psset_init(&psset);
+@@ -147,6 +147,8 @@ TEST_BEGIN(test_fill) {
+ 	edata_init_test(&extra_alloc);
+ 	err = test_psset_alloc_reuse(&psset, &extra_alloc, PAGE);
+ 	expect_true(err, "Alloc succeeded even though psset should be empty");
++	
++	free(alloc);
+ }
+ TEST_END
+ 
+@@ -157,7 +159,7 @@ TEST_BEGIN(test_reuse) {
+ 	hpdata_t pageslab;
+ 	hpdata_init(&pageslab, PAGESLAB_ADDR, PAGESLAB_AGE);
+ 
+-	edata_t alloc[HUGEPAGE_PAGES];
++	edata_t *alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
+ 
+ 	psset_t psset;
+ 	psset_init(&psset);
+@@ -239,6 +241,8 @@ TEST_BEGIN(test_reuse) {
+ 	err = test_psset_alloc_reuse(&psset, &alloc[index_of_4], 4 * PAGE);
+ 	expect_false(err, "Should have been able to find alloc.");
+ 	edata_expect(&alloc[index_of_4], index_of_4, 4);
++	
++	free(alloc);
+ }
+ TEST_END
+ 
+@@ -249,7 +253,7 @@ TEST_BEGIN(test_evict) {
+ 	hpdata_t pageslab;
+ 	hpdata_init(&pageslab, PAGESLAB_ADDR, PAGESLAB_AGE);
+ 
+-	edata_t alloc[HUGEPAGE_PAGES];
++	edata_t *alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
+ 
+ 	psset_t psset;
+ 	psset_init(&psset);
+@@ -273,6 +277,8 @@ TEST_BEGIN(test_evict) {
+ 
+ 	err = test_psset_alloc_reuse(&psset, &alloc[0], PAGE);
+ 	expect_true(err, "psset should be empty.");
++	
++	free(alloc);
+ }
+ TEST_END
+ 
+@@ -286,7 +292,9 @@ TEST_BEGIN(test_multi_pageslab) {
+ 	    (void *)((uintptr_t)PAGESLAB_ADDR + HUGEPAGE),
+ 	    PAGESLAB_AGE + 1);
+ 
+-	edata_t alloc[2][HUGEPAGE_PAGES];
++	edata_t* alloc[2];
++	alloc[0] = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
++	alloc[1] = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
+ 
+ 	psset_t psset;
+ 	psset_init(&psset);
+@@ -336,6 +344,9 @@ TEST_BEGIN(test_multi_pageslab) {
+ 	 */
+ 	err = test_psset_alloc_reuse(&psset, &alloc[1][0], 2 * PAGE);
+ 	expect_false(err, "Allocation should have succeeded");
++	
++	free(alloc[0]);
++	free(alloc[1]);
+ }
+ TEST_END
+ 
+@@ -385,7 +396,7 @@ TEST_BEGIN(test_stats) {
+ 	hpdata_t pageslab;
+ 	hpdata_init(&pageslab, PAGESLAB_ADDR, PAGESLAB_AGE);
+ 
+-	edata_t alloc[HUGEPAGE_PAGES];
++	edata_t *alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
+ 
+ 	psset_t psset;
+ 	psset_init(&psset);
+@@ -415,6 +426,8 @@ TEST_BEGIN(test_stats) {
+ 	stats_expect(&psset, 0);
+ 	psset_update_end(&psset, &pageslab);
+ 	stats_expect(&psset, 1);
++	
++	free(alloc);
+ }
+ TEST_END
+ 
+@@ -475,8 +488,8 @@ init_test_pageslabs(psset_t *psset, hpdata_t *pageslab,
+ 
+ TEST_BEGIN(test_oldest_fit) {
+ 	bool err;
+-	edata_t alloc[HUGEPAGE_PAGES];
+-	edata_t worse_alloc[HUGEPAGE_PAGES];
++	edata_t *alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
++	edata_t *worse_alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
+ 
+ 	hpdata_t pageslab;
+ 	hpdata_t worse_pageslab;
+@@ -493,14 +506,19 @@ TEST_BEGIN(test_oldest_fit) {
+ 	expect_false(err, "Nonempty psset failed page allocation");
+ 	expect_ptr_eq(&pageslab, edata_ps_get(&test_edata),
+ 	    "Allocated from the wrong pageslab");
++
++	free(alloc);
++	free(worse_alloc);
+ }
+ TEST_END
+ 
+ TEST_BEGIN(test_insert_remove) {
+ 	bool err;
+ 	hpdata_t *ps;
+-	edata_t alloc[HUGEPAGE_PAGES];
+-	edata_t worse_alloc[HUGEPAGE_PAGES];
++
++	edata_t *alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
++	edata_t *worse_alloc = (edata_t *)malloc(sizeof(edata_t) * HUGEPAGE_PAGES);
++
+ 
+ 	hpdata_t pageslab;
+ 	hpdata_t worse_pageslab;
+@@ -539,6 +557,9 @@ TEST_BEGIN(test_insert_remove) {
+ 	psset_update_begin(&psset, &worse_pageslab);
+ 	err = test_psset_alloc_reuse(&psset, &alloc[HUGEPAGE_PAGES - 1], PAGE);
+ 	expect_true(err, "psset should be empty, but an alloc succeeded");
++
++	free(alloc);
++	free(worse_alloc);
+ }
+ TEST_END
+ 
