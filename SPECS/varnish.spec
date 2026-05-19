@@ -50,12 +50,13 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 7.6.1
-Release: 4%{?dist}
+Release: 5%{?dist}
 License: BSD-2-Clause AND (BSD-2-Clause-FreeBSD AND BSD-3-Clause AND LicenseRef-Fedora-Public-Domain AND Zlib)
 URL: https://www.varnish-cache.org/
 Source0: http://varnish-cache.org/_downloads/%{name}-%{version}.tgz
 Source1: https://github.com/varnishcache/pkg-varnish-cache/archive/%{commit1}.tar.gz#/pkg-varnish-cache-%{shortcommit1}.tar.gz
 Source2: https://github.com/jemalloc/jemalloc/releases/download/%{jemalloc_version}/jemalloc-%{jemalloc_version}.tar.bz2
+Source4: varnish.tmpfiles
 
 # Patches:
 %if %{with bundled_jemalloc}
@@ -369,6 +370,10 @@ install -D -m 0644 redhat/varnish.service %{buildroot}%{_unitdir}/varnish.servic
 install -D -m 0644 redhat/varnishncsa.service %{buildroot}%{_unitdir}/varnishncsa.service
 install -D -m 0755 redhat/varnishreload %{buildroot}%{_sbindir}/varnishreload
 
+# tmpfiles.d configuration
+mkdir -p %{buildroot}%{_tmpfilesdir}
+install -m 644 -p %{SOURCE4} %{buildroot}%{_tmpfilesdir}/varnish.conf
+
 echo %{_libdir}/varnish > %{buildroot}%{_sysconfdir}/ld.so.conf.d/%{name}-%{_arch}.conf
 
 # No idea why these ends up with mode 600 in the debug package
@@ -394,6 +399,7 @@ chmod 644 lib/libvmod_*/*.h
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
 %config %{_sysconfdir}/ld.so.conf.d/%{name}-%{_arch}.conf
+%{_tmpfilesdir}/varnish.conf
 
 
 %{_unitdir}/varnish.service
@@ -438,6 +444,9 @@ test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc
 
 
 %changelog
+* Fri Oct 31 2025 Luboš Uhliarik <luhliari@redhat.com> - 7.6.1-5
+- Resolves: RHEL-121816 - Image mode: fix creation of /var files
+
 * Wed Jun 11 2025 Luboš Uhliarik <luhliari@redhat.com> - 7.6.1-4
 - Resolves: RHEL-45756 - Varnish consumes significantly more memory
   under RHEL8/9
