@@ -23,11 +23,12 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 6.6.2
-Release: 6%{?dist}.1
+Release: 8%{?dist}
 License: BSD
 URL: https://www.varnish-cache.org/
 Source0: http://varnish-cache.org/_downloads/%{name}-%{version}.tgz
 Source1: https://github.com/varnishcache/pkg-varnish-cache/archive/%{commit1}.tar.gz#/pkg-varnish-cache-%{shortcommit1}.tar.gz
+Source2: varnish.tmpfiles
 
 # Patches:
 # Patch  001: Because of Fedora's libtool no-rpath requirement, it is still
@@ -255,6 +256,10 @@ install -D -m 0644 redhat/varnish.service %{buildroot}%{_unitdir}/varnish.servic
 install -D -m 0644 redhat/varnishncsa.service %{buildroot}%{_unitdir}/varnishncsa.service
 install -D -m 0755 redhat/varnishreload %{buildroot}%{_sbindir}/varnishreload
 
+# tmpfiles.d configuration
+mkdir -p %{buildroot}%{_tmpfilesdir}
+install -m 644 -p %{SOURCE2} %{buildroot}%{_tmpfilesdir}/varnish.conf
+
 echo %{_libdir}/varnish > %{buildroot}%{_sysconfdir}/ld.so.conf.d/varnish-%{_arch}.conf
 
 # No idea why these ends up with mode 600 in the debug package
@@ -281,6 +286,7 @@ chmod 644 lib/libvmod_*/*.h
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
 %config %{_sysconfdir}/ld.so.conf.d/varnish-%{_arch}.conf
+%{_tmpfilesdir}/varnish.conf
 
 
 %{_unitdir}/varnish.service
@@ -324,8 +330,11 @@ test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc
 
 
 %changelog
-* Tue May 20 2025 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-6.1
-- Resolves: RHEL-89700 - varnish: request smuggling attacks (CVE-2025-47905)
+* Wed Nov 12 2025 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-8
+- Resolves: RHEL-121819 - Image mode: fix creation of /var files
+
+* Tue Jun 03 2025 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-7
+- Resolves: RHEL-89702 - varnish: request smuggling attacks (CVE-2025-47905)
 
 * Tue Apr 16 2024 Luboš Uhliarik <luhliari@redhat.com> - 6.6.2-6
 - Resolves: RHEL-30337 - varnish: HTTP/2 Broken Window Attack may result
